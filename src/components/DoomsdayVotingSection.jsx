@@ -303,12 +303,18 @@ export function DoomsdayVotingSection() {
   };
 
   const handleModalSubmit = async (voterName) => {
-    if (!selectedSide) return;
+    if (!selectedSide) return { success: false };
     const res = await submitVoteWithName(selectedSide, voterName);
     if (res && res.alreadyVoted) {
       alert("You have already voted within the 24-hour window.");
+      setModalOpen(false);
+      return res;
     }
-    setModalOpen(false);
+    if (res && res.success) {
+      setModalOpen(false);
+      return res;
+    }
+    return res;
   };
 
   return (

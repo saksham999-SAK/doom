@@ -114,9 +114,10 @@ export async function handleVoteSubmit(req, res, body) {
 
     const supabaseServer = getSupabaseServerClient();
     if (!supabaseServer) {
+      console.error('[API /api/vote] Server error: SUPABASE_SERVICE_ROLE_KEY or SUPABASE_URL not found in env.');
       return res.status(500).json({
         error: 'server_error',
-        message: 'Supabase service role client unavailable.',
+        message: 'Supabase service role client unavailable. Check Vercel environment variables.',
       });
     }
 
@@ -138,19 +139,18 @@ export async function handleVoteSubmit(req, res, body) {
     const { data: existingVotes, error: dupError } = await dupQuery;
 
     if (dupError) {
-      console.warn('Error checking existing vote by ip_hash:', dupError);
-    }
-
-    if (existingVotes && existingVotes.length > 0) {
+      console.warn('[API /api/vote] Notice: Error checking ip_hash (table/column may need v3 SQL migration):', dupError.message);
+    } else if (existingVotes && existingVotes.length > 0) {
+      console.log('[API /api/vote] Blocked duplicate vote from ip_hash:', ipHash.substring(0, 8));
       return res.status(409).json({
         error: 'already_voted',
-        message: 'You have already voted within the cooldown window.',
+        message: 'You have already voted within the 24-hour window.',
         option: existingVotes[0].option,
       });
     }
 
-    // 4. Insert into vote_names with ip_hash using Service Role client (bypasses RLS)
-    const { error: insertError } = await supabaseServer
+    // 4. Insert into vote_names table (Service Role client bypasses RLS)
+    let insertResult = await supabaseServer
       .from('vote_names')
       .insert({
         name: trimmedName,
@@ -158,13 +158,31 @@ export async function handleVoteSubmit(req, res, body) {
         ip_hash: ipHash,
       });
 
-    if (insertError) {
-      console.error('Error inserting vote_names:', insertError);
+    // If insertion failed because ip_hash column doesn't exist yet on production DB, fallback to basic insert
+    if (insertResult.error && insertResult.error.code === '42703') {
+      console.warn('[API /api/vote] Column ip_hash missing on vote_names, attempting fallback insert without ip_hash...');
+      insertResult = await supabaseServer
+        .from('vote_names')
+        .insert({
+          name: trimmedName,
+          option,
+        });
+    }
+
+    if (insertResult.error) {
+      console.error('[API /api/vote] FAILED to insert into vote_names table:', {
+        code: insertResult.error.code,
+        message: insertResult.error.message,
+        details: insertResult.error.details,
+        hint: insertResult.error.hint,
+      });
       return res.status(500).json({
         error: 'db_insert_failed',
-        message: insertError.message,
+        message: `Failed to record vote name: ${insertResult.error.message}`,
       });
     }
+
+    console.log(`[API /api/vote] SUCCESS: Recorded vote "${trimmedName}" for ${option}`);
 
     // 5. Increment aggregate counter in vote_counters table
     const { data: countData, error: counterSelectError } = await supabaseServer
@@ -210,7 +228,7 @@ export async function handleVoteSubmit(req, res, body) {
       avengersPercent,
     });
   } catch (err) {
-    console.error('Error in vote submission:', err);
+    console.error('[API /api/vote] Critical error in vote submission:', err);
     return res.status(500).json({
       error: 'internal_error',
       message: err.message,

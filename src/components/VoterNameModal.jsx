@@ -13,7 +13,7 @@ export function VoterNameModal({ isOpen, selectedOption, onClose, onSubmit, isSu
   const accentColor = isDoom ? '#00D6FF' : '#FF5070';
   const sideName = isDoom ? 'DOOM WINS' : 'AVENGERS WIN';
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const trimmed = name.trim();
 
@@ -28,7 +28,10 @@ export function VoterNameModal({ isOpen, selectedOption, onClose, onSubmit, isSu
     }
 
     setError('');
-    onSubmit(trimmed);
+    const res = await onSubmit(trimmed);
+    if (res && res.error) {
+      setError(res.error);
+    }
   };
 
   return (

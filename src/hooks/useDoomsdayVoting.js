@@ -86,7 +86,7 @@ export function useDoomsdayVoting() {
         .select('option, count');
 
       if (selectError) {
-        console.error('Error fetching vote counts:', selectError);
+        console.error('[Supabase Fetch] Error fetching vote counts:', selectError);
       } else if (countData && countData.length > 0) {
         const newCounts = { doom: 0, avengers: 0 };
         countData.forEach((row) => {
@@ -104,8 +104,10 @@ export function useDoomsdayVoting() {
         .order('created_at', { ascending: false })
         .limit(30);
 
+      console.log('[Supabase Fetch] Fetched vote_names rows:', nameData, 'Error:', nameError);
+
       if (nameError) {
-        console.warn('Error fetching vote names:', nameError);
+        console.warn('[Supabase Fetch] Error fetching vote names (check RLS SELECT policy):', nameError);
       } else if (nameData && nameData.length > 0) {
         const doomStack = [];
         const avengersStack = [];
@@ -156,6 +158,7 @@ export function useDoomsdayVoting() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'vote_names' },
         (payload) => {
+          console.log('[Supabase Realtime] Received new vote_names row:', payload.new);
           const newVote = payload.new;
           if (newVote.option === 'doom') {
             setDoomNames((prev) => [newVote, ...prev.slice(0, 14)]);
@@ -165,6 +168,7 @@ export function useDoomsdayVoting() {
         }
       )
       .subscribe((status) => {
+        console.log('[Supabase Realtime] Subscription status for vote_names:', status);
         setIsLive(status === 'SUBSCRIBED');
       });
 
@@ -208,7 +212,7 @@ export function useDoomsdayVoting() {
           setCounts({ doom: data.doomCount, avengers: data.avengersCount });
         }
 
-        // Add to local stack
+        // Add to local stack immediately for snappy feedback
         const newEntry = { id: `local-${Date.now()}`, name: trimmedName, option };
         if (option === 'doom') {
           setDoomNames((prev) => [newEntry, ...prev.slice(0, 14)]);
