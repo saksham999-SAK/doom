@@ -46,6 +46,62 @@ function AvengersIcon({ size = 40 }) {
 }
 
 /* ──────────────────────────────────────────────
+   Live Battle Energy Rays Bridge Component
+────────────────────────────────────────────── */
+function LiveBattleEnergyRays({ doomPercent }) {
+  return (
+    <div className="hidden md:block absolute top-1/2 left-0 right-0 -translate-y-1/2 h-12 z-20 pointer-events-none px-6">
+      {/* Container tracking collision ratio */}
+      <div className="relative w-full h-full flex items-center">
+        
+        {/* Doom Energy Ray (Left to Clash Point) */}
+        <div
+          className="h-[3px] bg-gradient-to-r from-[#00D6FF] via-[#0050FF] to-white relative transition-all duration-700 ease-out shadow-[0_0_15px_#00D6FF]"
+          style={{ width: `${doomPercent}%` }}
+        >
+          {/* Flowing energy particles */}
+          <motion.div
+            animate={{ x: ['0%', '100%'] }}
+            transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+            className="w-12 h-full bg-white shadow-[0_0_12px_#ffffff]"
+          />
+        </div>
+
+        {/* Avengers Energy Ray (Clash Point to Right) */}
+        <div
+          className="h-[3px] bg-gradient-to-r from-white via-[#FF2A5F] to-[#FFB347] relative transition-all duration-700 ease-out shadow-[0_0_15px_#FF2A5F]"
+          style={{ width: `${100 - doomPercent}%` }}
+        >
+          {/* Flowing energy particles */}
+          <motion.div
+            animate={{ x: ['100%', '0%'] }}
+            transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+            className="w-12 h-full bg-white shadow-[0_0_12px_#ffffff]"
+          />
+        </div>
+
+        {/* Dynamic Energy Collision Shockwave Node at exact split point */}
+        <motion.div
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-30 flex items-center justify-center pointer-events-none"
+          style={{ left: `${doomPercent}%` }}
+          animate={{ scale: [0.95, 1.25, 0.95], rotate: [0, 90, 180, 270, 360] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+        >
+          {/* Shockwave Rings */}
+          <div className="w-10 h-10 rounded-full border border-white/60 animate-ping absolute" />
+          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00D6FF] to-[#FF2A5F] blur-sm opacity-80" />
+          
+          <div className="relative z-10 w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-[0_0_20px_#ffffff]">
+            <Zap className="w-4 h-4 text-black fill-black animate-pulse" />
+          </div>
+        </motion.div>
+
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────
    Holographic Header Components for Voter Stacks
 ────────────────────────────────────────────── */
 function HolographicDoomHeader() {
@@ -450,36 +506,40 @@ export function DoomsdayVotingSection() {
           WHO WINS?
         </motion.h2>
 
-        {/* Vote Cards Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ ...SPRING_MEDIUM, delay: 0.15 }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 mb-14"
-        >
-          <VoteCard
-            option="doom"
-            label="DOOM WINS"
-            sublabel="Victor Von Doom"
-            bgImage="/doom.png"
-            icon={<DoomIcon size={34} />}
-            accentColor="#00D6FF"
-            glowColor="#00D6FF"
-            isSubmitting={isSubmitting}
-            onCardClick={handleCardClick}
-          />
-          <VoteCard
-            option="avengers"
-            label="AVENGERS WIN"
-            sublabel="Earth's Mightiest"
-            bgImage="/avengers.png"
-            icon={<AvengersIcon size={34} />}
-            accentColor="#FF5070"
-            glowColor="#FF2A5F"
-            isSubmitting={isSubmitting}
-            onCardClick={handleCardClick}
-          />
-        </motion.div>
+        {/* Vote Cards Grid with Live Battle Energy Rays Overlay */}
+        <div className="relative">
+          <LiveBattleEnergyRays doomPercent={doomPercent} />
+
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ ...SPRING_MEDIUM, delay: 0.15 }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 mb-14 relative z-10"
+          >
+            <VoteCard
+              option="doom"
+              label="DOOM WINS"
+              sublabel="Victor Von Doom"
+              bgImage="/doom.png"
+              icon={<DoomIcon size={34} />}
+              accentColor="#00D6FF"
+              glowColor="#00D6FF"
+              isSubmitting={isSubmitting}
+              onCardClick={handleCardClick}
+            />
+            <VoteCard
+              option="avengers"
+              label="AVENGERS WIN"
+              sublabel="Earth's Mightiest"
+              bgImage="/avengers.png"
+              icon={<AvengersIcon size={34} />}
+              accentColor="#FF5070"
+              glowColor="#FF2A5F"
+              isSubmitting={isSubmitting}
+              onCardClick={handleCardClick}
+            />
+          </motion.div>
+        </div>
 
         {/* Live Percentage Results & Total Votes */}
         <motion.div
