@@ -46,7 +46,7 @@ function AvengersIcon({ size = 40 }) {
 }
 
 /* ──────────────────────────────────────────────
-   Live Battle Energy Rays Bridge Component
+   Live Battle Energy Rays Bridge Component (Kept above cards)
 ────────────────────────────────────────────── */
 function LiveBattleEnergyRays({ doomPercent }) {
   return (
@@ -346,81 +346,10 @@ function VoterPill({ name, side }) {
 }
 
 /* ──────────────────────────────────────────────
-   Upgraded Vote Progress Bar Component
-────────────────────────────────────────────── */
-function PremiumVoteProgressBar({ doomPercent, avengersPercent, totalVotes }) {
-  const [pulse, setPulse] = useState(false);
-
-  useEffect(() => {
-    setPulse(true);
-    const timer = setTimeout(() => setPulse(false), 800);
-    return () => clearTimeout(timer);
-  }, [doomPercent, avengersPercent, totalVotes]);
-
-  return (
-    <div className="relative w-full py-2">
-      {/* Outer Glow matching segment colors */}
-      <div
-        className="absolute inset-0 rounded-full pointer-events-none transition-opacity duration-500"
-        style={{
-          boxShadow: '0 0 25px rgba(0, 214, 255, 0.28), 0 0 25px rgba(255, 42, 95, 0.28)',
-        }}
-      />
-
-      {/* Depth Groove Track */}
-      <div className="w-full h-4 bg-[#0A0D14] rounded-full border border-white/15 relative overflow-hidden flex shadow-[inset_0_2px_4px_rgba(0,0,0,0.9)]">
-        
-        {/* Doom Segment (Left) */}
-        <motion.div
-          className="h-full relative overflow-hidden rounded-l-full"
-          style={{ background: 'linear-gradient(90deg, #1C4FD6 0%, #00D6FF 100%)' }}
-          initial={{ width: '50%' }}
-          animate={{ width: `${doomPercent}%` }}
-          transition={SPRING_LIGHT}
-        >
-          <div className="animate-shimmer absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
-        </motion.div>
-
-        {/* Avengers Segment (Right) */}
-        <motion.div
-          className="h-full relative overflow-hidden rounded-r-full"
-          style={{ background: 'linear-gradient(90deg, #FF2A5F 0%, #FFB347 100%)' }}
-          initial={{ width: '50%' }}
-          animate={{ width: `${avengersPercent}%` }}
-          transition={SPRING_LIGHT}
-        >
-          <div className="animate-shimmer absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" style={{ animationDelay: '1.5s' }} />
-        </motion.div>
-
-        {/* Split-Point Marker Line & Top Rounded Cap */}
-        <motion.div
-          className="absolute top-0 bottom-0 z-20 pointer-events-none"
-          style={{ left: `${doomPercent}%` }}
-          animate={{ left: `${doomPercent}%` }}
-          transition={SPRING_LIGHT}
-        >
-          <div
-            className={`w-[2px] h-full bg-white/90 shadow-[0_0_8px_rgba(255,255,255,0.9)] transition-all duration-300 ${
-              pulse ? 'scale-x-150 bg-white' : ''
-            }`}
-          />
-          <div
-            className={`w-2.5 h-2.5 rounded-full bg-white absolute -top-1 -left-[4px] shadow-[0_0_10px_rgba(255,255,255,1)] transition-transform duration-300 ${
-              pulse ? 'scale-150' : 'scale-100'
-            }`}
-          />
-        </motion.div>
-      </div>
-    </div>
-  );
-}
-
-/* ──────────────────────────────────────────────
    Main Voting Section
 ────────────────────────────────────────────── */
 export function DoomsdayVotingSection() {
   const {
-    totalVotes,
     doomPercent,
     avengersPercent,
     doomNames,
@@ -541,7 +470,7 @@ export function DoomsdayVotingSection() {
           </motion.div>
         </div>
 
-        {/* Live Percentage Results & Total Votes */}
+        {/* Live Percentage Results */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={isInView ? { opacity: 1 } : {}}
@@ -555,23 +484,6 @@ export function DoomsdayVotingSection() {
             <span className="text-[#FF5070] tracking-wider">
               AVENGERS WIN: <CountUpNumber value={avengersPercent} format={false} />%
             </span>
-          </div>
-
-          {/* Upgraded Premium Depth Vote Progress Bar */}
-          <PremiumVoteProgressBar
-            doomPercent={doomPercent}
-            avengersPercent={avengersPercent}
-            totalVotes={totalVotes}
-          />
-
-          {/* Live Total Votes */}
-          <div className="flex items-center justify-center gap-3 text-xs font-space tracking-widest uppercase text-white/50 pt-2 font-medium">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00D6FF] opacity-50" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00D6FF]" />
-            </span>
-            <span>LIVE TOTAL VOTES CAST:</span>
-            <CountUpNumber value={totalVotes} className="text-white font-bold" />
           </div>
         </motion.div>
 
