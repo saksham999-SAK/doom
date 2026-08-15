@@ -37,8 +37,9 @@ export function useDoomsdayVoting() {
   const [error, setError] = useState(null);
   const [isLive, setIsLive] = useState(false);
 
-  // Check localStorage on mount
+  // Check server-side status (cookie + IP hash) and localStorage on mount
   useEffect(() => {
+    // 1. LocalStorage check for instant UI state
     try {
       const savedVote = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (savedVote) {
@@ -48,6 +49,24 @@ export function useDoomsdayVoting() {
     } catch (e) {
       console.warn('LocalStorage unavailable:', e);
     }
+
+    // 2. Server-side /api/vote/status GET check (cookie + IP hash)
+    const checkServerStatus = async () => {
+      try {
+        const res = await fetch('/api/vote/status');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.hasVoted) {
+            setHasVoted(true);
+            if (data.option) setUserVote(data.option);
+          }
+        }
+      } catch (err) {
+        console.warn('Could not check /api/vote/status:', err);
+      }
+    };
+
+    checkServerStatus();
   }, []);
 
   // Fetch current aggregate counts and recent voter names from Supabase
@@ -86,7 +105,7 @@ export function useDoomsdayVoting() {
         .limit(30);
 
       if (nameError) {
-        console.warn('Error fetching vote names (run supabase_setup_v2.sql):', nameError);
+        console.warn('Error fetching vote names:', nameError);
       } else if (nameData && nameData.length > 0) {
         const doomStack = [];
         const avengersStack = [];
@@ -118,10 +137,8 @@ export function useDoomsdayVoting() {
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) return;
 
-    // Channel for Realtime
     const channel = supabase
       .channel('public:voting_realtime')
-      // Listen to aggregate counter updates
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'vote_counters' },
@@ -135,7 +152,6 @@ export function useDoomsdayVoting() {
           }
         }
       )
-      // Listen to individual name inserts
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'vote_names' },
@@ -157,64 +173,73 @@ export function useDoomsdayVoting() {
     };
   }, []);
 
-  // Submit a vote with name ('doom' | 'avengers', voterName)
+  // Submit vote via POST /api/vote (Server-side API route enforcing deduplication)
   const submitVoteWithName = async (option, voterName) => {
-    if (hasVoted || isSubmitting) return;
-    if (option !== 'doom' && option !== 'avengers') return;
+    if (hasVoted || isSubmitting) return { success: false };
+    if (option !== 'doom' && option !== 'avengers') return { success: false };
 
     const trimmedName = voterName.trim();
-    if (!trimmedName) return;
+    if (!trimmedName || trimmedName.length > 20) {
+      return { success: false, error: 'Name must be 1 to 20 characters.' };
+    }
 
     setIsSubmitting(true);
     setError(null);
 
-    // Save to localStorage
     try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, option);
-      setHasVoted(true);
-      setUserVote(option);
-    } catch (e) {
-      console.warn('LocalStorage set failed:', e);
-    }
+      const res = await fetch('/api/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ option, name: trimmedName }),
+      });
 
-    // Optimistic UI updates
-    const tempId = `temp-${Date.now()}`;
-    const newEntry = { id: tempId, name: trimmedName, option };
+      const data = await res.json();
 
-    if (option === 'doom') {
-      setDoomNames((prev) => [newEntry, ...prev.slice(0, 14)]);
-      setCounts((prev) => ({ ...prev, doom: prev.doom + 1 }));
-    } else {
-      setAvengersNames((prev) => [newEntry, ...prev.slice(0, 14)]);
-      setCounts((prev) => ({ ...prev, avengers: prev.avengers + 1 }));
-    }
+      if (res.status === 200) {
+        // Success: update localStorage and state
+        try {
+          localStorage.setItem(LOCAL_STORAGE_KEY, option);
+        } catch (e) {}
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        // Call record_vote_with_name RPC function
-        const { data, error: rpcError } = await supabase.rpc('record_vote_with_name', {
-          option_name: option,
-          voter_name: trimmedName,
-        });
+        setHasVoted(true);
+        setUserVote(option);
 
-        if (rpcError) {
-          console.warn('record_vote_with_name RPC error, trying fallback insert:', rpcError);
-          // Fallback if RPC function not created yet
-          await supabase.from('vote_names').insert({ name: trimmedName, option });
-          await supabase.rpc('increment_vote', { option_name: option });
-        } else if (data && data.length > 0) {
-          const updated = data[0];
-          setCounts({
-            doom: Number(updated.doom_count || 0),
-            avengers: Number(updated.avengers_count || 0),
-          });
+        if (data.doomCount !== undefined && data.avengersCount !== undefined) {
+          setCounts({ doom: data.doomCount, avengers: data.avengersCount });
         }
-      } catch (err) {
-        console.error('Submit vote failed:', err);
-      }
-    }
 
-    setIsSubmitting(false);
+        // Add to local stack
+        const newEntry = { id: `local-${Date.now()}`, name: trimmedName, option };
+        if (option === 'doom') {
+          setDoomNames((prev) => [newEntry, ...prev.slice(0, 14)]);
+        } else {
+          setAvengersNames((prev) => [newEntry, ...prev.slice(0, 14)]);
+        }
+
+        setIsSubmitting(false);
+        return { success: true };
+      } else if (res.status === 409) {
+        // Already Voted
+        try {
+          localStorage.setItem(LOCAL_STORAGE_KEY, data.option || option);
+        } catch (e) {}
+
+        setHasVoted(true);
+        setUserVote(data.option || option);
+        setIsSubmitting(false);
+        return { alreadyVoted: true, message: 'You have already voted within the 24-hour window.' };
+      } else {
+        // Bad Request / Validation error
+        setError(data.message || 'Vote submission failed.');
+        setIsSubmitting(false);
+        return { success: false, error: data.message || 'Vote submission failed.' };
+      }
+    } catch (err) {
+      console.error('Error submitting vote to /api/vote:', err);
+      setError(err.message);
+      setIsSubmitting(false);
+      return { success: false, error: err.message };
+    }
   };
 
   const totalVotes = counts.doom + counts.avengers;
