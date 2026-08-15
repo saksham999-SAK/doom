@@ -50,7 +50,7 @@ function AvengersIcon({ size = 40 }) {
 ────────────────────────────────────────────── */
 function LiveBattleEnergyRays({ doomPercent }) {
   return (
-    <div className="hidden md:block absolute -bottom-7 left-0 right-0 h-10 z-20 pointer-events-none px-4">
+    <div className="hidden md:block absolute -bottom-11 left-0 right-0 h-10 z-20 pointer-events-none px-4">
       {/* Container tracking collision ratio */}
       <div className="relative w-full h-full flex items-center">
         
