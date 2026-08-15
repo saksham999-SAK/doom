@@ -46,11 +46,11 @@ function AvengersIcon({ size = 40 }) {
 }
 
 /* ──────────────────────────────────────────────
-   Live Battle Energy Rays Bridge Component (Kept above cards)
+   Live Battle Energy Rays Bridge Component
 ────────────────────────────────────────────── */
 function LiveBattleEnergyRays({ doomPercent }) {
   return (
-    <div className="hidden md:block absolute top-1/2 left-0 right-0 -translate-y-1/2 h-12 z-20 pointer-events-none px-6">
+    <div className="hidden md:block absolute -bottom-7 left-0 right-0 h-10 z-20 pointer-events-none px-4">
       {/* Container tracking collision ratio */}
       <div className="relative w-full h-full flex items-center">
         
@@ -84,15 +84,15 @@ function LiveBattleEnergyRays({ doomPercent }) {
         <motion.div
           className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-30 flex items-center justify-center pointer-events-none"
           style={{ left: `${doomPercent}%` }}
-          animate={{ scale: [0.95, 1.25, 0.95], rotate: [0, 90, 180, 270, 360] }}
+          animate={{ scale: [0.95, 1.2, 0.95], rotate: [0, 90, 180, 270, 360] }}
           transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
         >
           {/* Shockwave Rings */}
-          <div className="w-10 h-10 rounded-full border border-white/60 animate-ping absolute" />
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00D6FF] to-[#FF2A5F] blur-sm opacity-80" />
+          <div className="w-8 h-8 rounded-full border border-white/60 animate-ping absolute" />
+          <div className="w-6 h-6 rounded-full bg-gradient-to-r from-[#00D6FF] to-[#FF2A5F] blur-sm opacity-80" />
           
-          <div className="relative z-10 w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-[0_0_20px_#ffffff]">
-            <Zap className="w-4 h-4 text-black fill-black animate-pulse" />
+          <div className="relative z-10 w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-[0_0_15px_#ffffff]">
+            <Zap className="w-3.5 h-3.5 text-black fill-black animate-pulse" />
           </div>
         </motion.div>
 
@@ -435,15 +435,13 @@ export function DoomsdayVotingSection() {
           WHO WINS?
         </motion.h2>
 
-        {/* Vote Cards Grid with Live Battle Energy Rays Overlay */}
-        <div className="relative">
-          <LiveBattleEnergyRays doomPercent={doomPercent} />
-
+        {/* Vote Cards Grid with Live Battle Energy Rays repositioned cleanly BELOW cards */}
+        <div className="relative mb-16">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ ...SPRING_MEDIUM, delay: 0.15 }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 mb-14 relative z-10"
+            className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 relative z-10"
           >
             <VoteCard
               option="doom"
@@ -468,6 +466,9 @@ export function DoomsdayVotingSection() {
               onCardClick={handleCardClick}
             />
           </motion.div>
+
+          {/* Energy Rays positioned cleanly BELOW the cards for 100% unobscured card vision */}
+          <LiveBattleEnergyRays doomPercent={doomPercent} />
         </div>
 
         {/* Live Percentage Results */}
@@ -475,7 +476,7 @@ export function DoomsdayVotingSection() {
           initial={{ opacity: 0 }}
           animate={isInView ? { opacity: 1 } : {}}
           transition={{ delay: 0.3 }}
-          className="space-y-4 max-w-2xl mx-auto pt-6 border-t border-white/10"
+          className="space-y-4 max-w-2xl mx-auto pt-4"
         >
           <div className="flex items-center justify-between text-xs md:text-sm font-space font-bold">
             <span className="text-[#00D6FF] tracking-wider">
