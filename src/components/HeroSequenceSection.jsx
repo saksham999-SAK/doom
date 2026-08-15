@@ -35,11 +35,6 @@ export function HeroSequenceSection({ images, isLoaded, lenisRef }) {
     ? 0.78
     : 0.28 + Math.sin(scrollProgress * Math.PI) * 0.1;
 
-  // ── HUD bar values ──
-  const hudFrame   = images.length > 0 ? Math.round(scrollProgress * (images.length - 1)) + 1 : 1;
-  const hudTotal   = images.length;
-  const hudPercent = Math.round(scrollProgress * 100);
-
   return (
     <section
       ref={wrapperRef}
@@ -68,25 +63,6 @@ export function HeroSequenceSection({ images, isLoaded, lenisRef }) {
 
         {/* Expanded 10-Beat Cinematic Narrative Overlay */}
         <NarrativeOverlay scrollProgress={scrollProgress} mousePos={mousePos} />
-
-        {/* Cinematic HUD bar — neutral white progress line without blue/pink color gradient */}
-        <div
-          className="absolute bottom-0 left-0 right-0 z-20 px-6 py-4 flex items-center justify-between pointer-events-none"
-          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)' }}
-        >
-          <span className="text-[10px] font-space text-white/40 tracking-widest tabular-nums font-semibold">
-            FRAME <span className="text-white/80">{String(hudFrame).padStart(3, '0')}</span> / {String(hudTotal).padStart(3, '0')}
-          </span>
-          <div className="flex-1 mx-6 h-[2px] bg-white/20 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-white/70 rounded-full"
-              style={{ width: `${hudPercent}%`, transition: 'width 80ms linear' }}
-            />
-          </div>
-          <span className="text-[10px] font-space text-white/40 tracking-widest uppercase font-semibold">
-            CINEMATIC NARRATIVE
-          </span>
-        </div>
 
         {/* Scroll indicator — fades out after scroll starts */}
         {scrollProgress < 0.04 && (
