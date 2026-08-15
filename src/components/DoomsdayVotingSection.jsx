@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useInView } from 'framer-motion';
 import { useDoomsdayVoting } from '../hooks/useDoomsdayVoting';
 import { CountUpNumber } from './CountUpNumber';
 import { VoterNameModal } from './VoterNameModal';
-import { Check, Users } from 'lucide-react';
+import { Check, Users, Zap, Shield, Crown } from 'lucide-react';
 import {
   SPRING_MEDIUM,
   SPRING_LIGHT,
@@ -11,7 +11,7 @@ import {
 } from '../config/motionVariants';
 
 /* ──────────────────────────────────────────────
-   SVG Icons
+   SVG Card Icons
 ────────────────────────────────────────────── */
 function DoomIcon({ size = 40 }) {
   return (
@@ -42,6 +42,97 @@ function AvengersIcon({ size = 40 }) {
       <path d="M24 4L8 10V24C8 32.84 15.16 44 24 44C32.84 44 40 32.84 40 24V10L24 4Z" fill="url(#avengerGrad)" />
       <path d="M20 22L23 25L28 18" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
     </svg>
+  );
+}
+
+/* ──────────────────────────────────────────────
+   Holographic Header Components for Voter Stacks
+────────────────────────────────────────────── */
+function HolographicDoomHeader() {
+  return (
+    <div className="relative flex flex-col items-start mb-6">
+      {/* 3D Holographic Floating Badge */}
+      <motion.div
+        animate={{ y: [-4, 4, -4], rotate: [0, 1, 0] }}
+        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+        className="relative flex items-center gap-3 p-2.5 pr-4 rounded-2xl border border-[#00D6FF]/40 bg-[#00D6FF]/10 backdrop-blur-xl shadow-[0_0_30px_rgba(0,214,255,0.25)]"
+      >
+        {/* Holographic Spinning Tech Ring */}
+        <div className="relative w-10 h-10 flex items-center justify-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
+            className="absolute inset-0 rounded-full border border-dashed border-[#00D6FF]/70"
+          />
+          <div className="w-8 h-8 rounded-full bg-[#00D6FF]/20 flex items-center justify-center text-[#00D6FF] shadow-[0_0_12px_#00D6FF]">
+            <Crown className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="flex flex-col text-left">
+          <span className="text-[9px] font-space font-bold uppercase tracking-[0.25em] text-[#00D6FF] flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#00D6FF] animate-ping" />
+            LATVERIA // SECTOR 01
+          </span>
+          <span className="font-bebas text-lg tracking-wider text-white">
+            DOOM SUPREMACY
+          </span>
+        </div>
+      </motion.div>
+
+      {/* Energy Conduit Bar running down */}
+      <div className="relative w-full h-[2px] mt-3 bg-gradient-to-r from-[#00D6FF]/50 via-[#00D6FF]/20 to-transparent overflow-hidden">
+        <motion.div
+          animate={{ x: ['-100%', '200%'] }}
+          transition={{ duration: 2.2, repeat: Infinity, ease: 'linear' }}
+          className="w-1/3 h-full bg-white shadow-[0_0_10px_#00D6FF]"
+        />
+      </div>
+    </div>
+  );
+}
+
+function HolographicAvengersHeader() {
+  return (
+    <div className="relative flex flex-col items-end mb-6">
+      {/* 3D Holographic Floating Badge */}
+      <motion.div
+        animate={{ y: [-4, 4, -4], rotate: [0, -1, 0] }}
+        transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+        className="relative flex items-center gap-3 p-2.5 pl-4 rounded-2xl border border-[#FF5070]/40 bg-[#FF5070]/10 backdrop-blur-xl shadow-[0_0_30px_rgba(255,80,112,0.25)]"
+      >
+        <div className="flex flex-col text-right">
+          <span className="text-[9px] font-space font-bold uppercase tracking-[0.25em] text-[#FF5070] flex items-center justify-end gap-1">
+            EARTH-616 // AVENGERS HQ
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FF5070] animate-ping" />
+          </span>
+          <span className="font-bebas text-lg tracking-wider text-white">
+            EARTH'S MIGHTIEST
+          </span>
+        </div>
+
+        {/* Holographic Spinning Tech Ring */}
+        <div className="relative w-10 h-10 flex items-center justify-center">
+          <motion.div
+            animate={{ rotate: -360 }}
+            transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
+            className="absolute inset-0 rounded-full border border-dashed border-[#FF5070]/70"
+          />
+          <div className="w-8 h-8 rounded-full bg-[#FF5070]/20 flex items-center justify-center text-[#FF5070] shadow-[0_0_12px_#FF5070]">
+            <Shield className="w-4 h-4" />
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Energy Conduit Bar running down */}
+      <div className="relative w-full h-[2px] mt-3 bg-gradient-to-l from-[#FF5070]/50 via-[#FF5070]/20 to-transparent overflow-hidden">
+        <motion.div
+          animate={{ x: ['200%', '-100%'] }}
+          transition={{ duration: 2.2, repeat: Infinity, ease: 'linear' }}
+          className="w-1/3 h-full bg-white shadow-[0_0_10px_#FF5070]"
+        />
+      </div>
+    </div>
   );
 }
 
@@ -150,36 +241,41 @@ function VoteCard({
 function VoterPill({ name, side }) {
   const isDoom = side === 'doom';
   const color = isDoom ? '#00D6FF' : '#FF5070';
-  const border = isDoom ? 'rgba(0, 214, 255, 0.25)' : 'rgba(255, 80, 112, 0.25)';
+  const border = isDoom ? 'rgba(0, 214, 255, 0.35)' : 'rgba(255, 80, 112, 0.35)';
 
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, x: isDoom ? -35 : 35, scale: 0.9 }}
+      initial={{ opacity: 0, x: isDoom ? -40 : 40, scale: 0.85 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.8 }}
+      whileHover={{ scale: 1.05, x: isDoom ? 4 : -4 }}
       transition={SPRING_LIGHT}
-      className="relative group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-space font-semibold backdrop-blur-md shadow-lg shrink-0 whitespace-nowrap"
+      className="relative group inline-flex items-center gap-2.5 px-4 py-2 rounded-xl border text-xs font-space font-semibold backdrop-blur-xl shadow-xl shrink-0 whitespace-nowrap"
       style={{
-        backgroundColor: 'rgba(10, 15, 24, 0.82)',
+        backgroundColor: 'rgba(10, 15, 24, 0.88)',
         borderColor: border,
-        color: 'rgba(255,255,255,0.92)',
+        color: 'rgba(255,255,255,0.95)',
+        boxShadow: `0 4px 20px ${color}15`,
       }}
     >
-      {/* Subtle entrance mapping line/trail toward corresponding card */}
-      <motion.div
-        initial={{ opacity: 0.3, scaleX: 1 }}
-        animate={{ opacity: 0, scaleX: 0 }}
-        transition={{ duration: 1.2, ease: 'easeOut' }}
-        className={`absolute top-1/2 -translate-y-1/2 h-[1px] w-20 pointer-events-none ${
-          isDoom ? 'left-full origin-left bg-gradient-to-r from-[#00D6FF] to-transparent' : 'right-full origin-right bg-gradient-to-l from-[#FF5070] to-transparent'
+      {/* Animated laser connector line mapping pill toward central vote card */}
+      <div
+        className={`absolute top-1/2 -translate-y-1/2 h-[1px] w-24 pointer-events-none overflow-hidden ${
+          isDoom ? 'left-full bg-gradient-to-r from-[#00D6FF]/60 to-transparent' : 'right-full bg-gradient-to-l from-[#FF5070]/60 to-transparent'
         }`}
-      />
+      >
+        <motion.div
+          animate={{ x: isDoom ? ['0%', '100%'] : ['100%', '0%'] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          className="w-4 h-full bg-white shadow-[0_0_8px_#ffffff]"
+        />
+      </div>
 
       {/* Gentle pulsing activity dot indicator */}
       <span className="relative flex h-2 w-2 items-center justify-center">
         <span
-          className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60"
+          className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-70"
           style={{ backgroundColor: color }}
         />
         <span
@@ -188,7 +284,7 @@ function VoterPill({ name, side }) {
         />
       </span>
 
-      <span>{name}</span>
+      <span className="tracking-wide">{name}</span>
     </motion.div>
   );
 }
@@ -312,29 +408,33 @@ export function DoomsdayVotingSection() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-black/60 to-black" />
       </div>
 
-      {/* ── DESKTOP VIEWPORT MARGINS: Live Voter Name Stacks ── */}
+      {/* ── DESKTOP VIEWPORT MARGINS: Holographic Live Voter Stacks ── */}
       {/* Left Margin Stack: Doom Voters */}
-      <div className="hidden xl:flex absolute left-8 top-32 bottom-32 w-64 flex-col gap-2.5 z-20 pointer-events-none overflow-hidden justify-start items-start">
-        <span className="text-[10px] font-space font-bold uppercase tracking-[0.25em] text-[#00D6FF]/70 mb-2 flex items-center gap-1.5">
-          <Users className="w-3 h-3" /> DOOM VOTERS
-        </span>
-        <AnimatePresence mode="popLayout">
-          {doomNames.slice(0, 12).map((item) => (
-            <VoterPill key={item.id} name={item.name} side="doom" />
-          ))}
-        </AnimatePresence>
+      <div className="hidden xl:flex absolute left-8 top-28 bottom-28 w-72 flex-col z-20 pointer-events-none justify-start items-start">
+        <HolographicDoomHeader />
+        
+        {/* Scrollable / Animated Voter Stack container */}
+        <div className="w-full flex flex-col gap-3 overflow-hidden pr-2">
+          <AnimatePresence mode="popLayout">
+            {doomNames.slice(0, 10).map((item) => (
+              <VoterPill key={item.id} name={item.name} side="doom" />
+            ))}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Right Margin Stack: Avengers Voters */}
-      <div className="hidden xl:flex absolute right-8 top-32 bottom-32 w-64 flex-col gap-2.5 z-20 pointer-events-none overflow-hidden justify-start items-end">
-        <span className="text-[10px] font-space font-bold uppercase tracking-[0.25em] text-[#FF5070]/70 mb-2 flex items-center gap-1.5">
-          <Users className="w-3 h-3" /> AVENGERS VOTERS
-        </span>
-        <AnimatePresence mode="popLayout">
-          {avengersNames.slice(0, 12).map((item) => (
-            <VoterPill key={item.id} name={item.name} side="avengers" />
-          ))}
-        </AnimatePresence>
+      <div className="hidden xl:flex absolute right-8 top-28 bottom-28 w-72 flex-col z-20 pointer-events-none justify-start items-end">
+        <HolographicAvengersHeader />
+
+        {/* Scrollable / Animated Voter Stack container */}
+        <div className="w-full flex flex-col gap-3 overflow-hidden items-end pl-2">
+          <AnimatePresence mode="popLayout">
+            {avengersNames.slice(0, 10).map((item) => (
+              <VoterPill key={item.id} name={item.name} side="avengers" />
+            ))}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* ── Main Content Container ── */}
