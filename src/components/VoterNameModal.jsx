@@ -11,6 +11,7 @@ export function VoterNameModal({ isOpen, selectedOption, onClose, onSubmit, isSu
 
   const isDoom = selectedOption === 'doom';
   const accentColor = isDoom ? '#00D6FF' : '#FF5070';
+  const buttonTextColor = isDoom ? '#000000' : '#FFFFFF';
   const sideName = isDoom ? 'DOOM WINS' : 'AVENGERS WIN';
 
   const handleSubmit = async (e) => {
@@ -37,57 +38,47 @@ export function VoterNameModal({ isOpen, selectedOption, onClose, onSubmit, isSu
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-        {/* Backdrop */}
+        {/* Flat Dark Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-black/80 backdrop-blur-md"
+          className="absolute inset-0 bg-black/80"
         />
 
-        {/* Modal Card */}
+        {/* Minimalist Flat Card */}
         <motion.div
-          initial={{ scale: 0.85, opacity: 0, y: 20 }}
+          initial={{ scale: 0.95, opacity: 0, y: 12 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.9, opacity: 0, y: 10 }}
+          exit={{ scale: 0.95, opacity: 0, y: 8 }}
           transition={SPRING_SNAPPY}
-          className="relative z-10 w-full max-w-md p-8 md:p-10 rounded-3xl border glass-panel shadow-2xl text-center overflow-hidden"
-          style={{
-            borderColor: `${accentColor}44`,
-            boxShadow: `0 0 50px ${accentColor}22`,
-          }}
+          className="relative z-10 w-full max-w-md p-8 md:p-10 rounded-xl bg-[#0A0A0C] border border-white/10 text-center shadow-xl"
         >
-          {/* Ambient Glow */}
-          <div
-            className="absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full pointer-events-none opacity-40 blur-3xl"
-            style={{ backgroundColor: accentColor }}
-          />
-
-          {/* Close button */}
+          {/* Minimal Close button */}
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 text-white/40 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
+            className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/5"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
 
-          {/* Eyebrow badge */}
+          {/* Simple Eyebrow label */}
           <span
-            className="inline-block text-[11px] font-space font-bold uppercase tracking-[0.25em] px-3 py-1 rounded-full border mb-4"
+            className="inline-block text-[11px] font-space font-semibold uppercase tracking-[0.2em] px-3 py-1 rounded-md mb-4"
             style={{
               color: accentColor,
-              borderColor: `${accentColor}40`,
-              backgroundColor: `${accentColor}15`,
+              backgroundColor: `${accentColor}12`,
+              border: `1px solid ${accentColor}30`,
             }}
           >
             VOTING FOR: {sideName}
           </span>
 
-          <h3 className="font-bebas text-4xl md:text-5xl text-white tracking-wider mb-2">
+          <h3 className="font-bebas text-4xl text-white tracking-wider mb-1">
             ENTER YOUR NAME
           </h3>
-          <p className="font-space text-xs md:text-sm text-white/55 mb-6">
+          <p className="font-space text-xs text-white/50 mb-6">
             Record your stance in the live multiversal battle log.
           </p>
 
@@ -103,10 +94,9 @@ export function VoterNameModal({ isOpen, selectedOption, onClose, onSubmit, isSu
                 }}
                 placeholder="Your name"
                 autoFocus
-                className="w-full px-5 py-3.5 rounded-xl bg-black/60 border text-white placeholder-white/30 font-space text-sm focus:outline-none transition-all"
+                className="w-full px-4 py-3 rounded-lg bg-[#121215] border border-white/15 text-white placeholder-white/30 font-space text-sm focus:outline-none focus:border-white/40 transition-colors"
                 style={{
-                  borderColor: error ? '#FF2A5F' : 'rgba(255,255,255,0.15)',
-                  boxShadow: error ? '0 0 10px rgba(255,42,95,0.3)' : 'none',
+                  borderColor: error ? '#FF5070' : undefined,
                 }}
               />
               {error && (
@@ -116,14 +106,15 @@ export function VoterNameModal({ isOpen, selectedOption, onClose, onSubmit, isSu
               )}
             </div>
 
+            {/* Solid Fill Flat Submit Button */}
             <button
               type="submit"
               disabled={isSubmitting}
               data-cursor="hover"
-              className="w-full py-4 rounded-xl font-space font-bold text-sm tracking-wider uppercase text-black transition-all flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98]"
+              className="w-full py-3.5 rounded-lg font-space font-bold text-xs tracking-wider uppercase transition-colors flex items-center justify-center gap-2 hover:brightness-105 active:scale-[0.99]"
               style={{
                 backgroundColor: accentColor,
-                boxShadow: `0 0 20px ${accentColor}66`,
+                color: buttonTextColor,
               }}
             >
               {isSubmitting ? (

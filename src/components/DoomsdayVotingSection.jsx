@@ -175,25 +175,47 @@ function VoteCard({
 /* ──────────────────────────────────────────────
    Live Voter Name Stack Pill Component
 ────────────────────────────────────────────── */
-function VoterPill({ name, side }) {
+function VoterPill({ name, side, isNew = false }) {
   const isDoom = side === 'doom';
   const color = isDoom ? '#00D6FF' : '#FF5070';
   const border = isDoom ? 'rgba(0, 214, 255, 0.25)' : 'rgba(255, 80, 112, 0.25)';
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: isDoom ? -30 : 30, scale: 0.9 }}
+      layout
+      initial={{ opacity: 0, x: isDoom ? -35 : 35, scale: 0.9 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.8 }}
       transition={SPRING_LIGHT}
-      className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-space font-semibold backdrop-blur-md shadow-lg shrink-0 whitespace-nowrap"
+      className="relative group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-space font-semibold backdrop-blur-md shadow-lg shrink-0 whitespace-nowrap"
       style={{
-        backgroundColor: 'rgba(10, 15, 24, 0.8)',
+        backgroundColor: 'rgba(10, 15, 24, 0.82)',
         borderColor: border,
-        color: 'rgba(255,255,255,0.9)',
+        color: 'rgba(255,255,255,0.92)',
       }}
     >
-      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
+      {/* Subtle entrance mapping line/trail toward corresponding card */}
+      <motion.div
+        initial={{ opacity: 0.3, scaleX: 1 }}
+        animate={{ opacity: 0, scaleX: 0 }}
+        transition={{ duration: 1.2, ease: 'easeOut' }}
+        className={`absolute top-1/2 -translate-y-1/2 h-[1px] w-20 pointer-events-none ${
+          isDoom ? 'left-full origin-left bg-gradient-to-r from-[#00D6FF] to-transparent' : 'right-full origin-right bg-gradient-to-l from-[#FF5070] to-transparent'
+        }`}
+      />
+
+      {/* Gentle pulsing activity dot indicator */}
+      <span className="relative flex h-2 w-2 items-center justify-center">
+        <span
+          className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60"
+          style={{ backgroundColor: color }}
+        />
+        <span
+          className="relative inline-flex rounded-full h-1.5 w-1.5"
+          style={{ backgroundColor: color }}
+        />
+      </span>
+
       <span>{name}</span>
     </motion.div>
   );
@@ -205,7 +227,6 @@ function VoterPill({ name, side }) {
 function PremiumVoteProgressBar({ doomPercent, avengersPercent, totalVotes }) {
   const [pulse, setPulse] = useState(false);
 
-  // Briefly pulse divider glow on percentage change
   useEffect(() => {
     setPulse(true);
     const timer = setTimeout(() => setPulse(false), 800);
@@ -225,7 +246,7 @@ function PremiumVoteProgressBar({ doomPercent, avengersPercent, totalVotes }) {
       {/* Depth Groove Track */}
       <div className="w-full h-4 bg-[#0A0D14] rounded-full border border-white/15 relative overflow-hidden flex shadow-[inset_0_2px_4px_rgba(0,0,0,0.9)]">
         
-        {/* Doom Segment (Left) — Sharp boundary, internal gradient #1C4FD6 -> #00D6FF */}
+        {/* Doom Segment (Left) — Sharp boundary */}
         <motion.div
           className="h-full relative overflow-hidden rounded-l-full"
           style={{ background: 'linear-gradient(90deg, #1C4FD6 0%, #00D6FF 100%)' }}
@@ -233,11 +254,10 @@ function PremiumVoteProgressBar({ doomPercent, avengersPercent, totalVotes }) {
           animate={{ width: `${doomPercent}%` }}
           transition={SPRING_LIGHT}
         >
-          {/* GPU-cheap diagonal shimmer sheen */}
           <div className="animate-shimmer absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
         </motion.div>
 
-        {/* Avengers Segment (Right) — Sharp boundary, internal gradient #FF2A5F -> #FFB347 */}
+        {/* Avengers Segment (Right) — Sharp boundary */}
         <motion.div
           className="h-full relative overflow-hidden rounded-r-full"
           style={{ background: 'linear-gradient(90deg, #FF2A5F 0%, #FFB347 100%)' }}
@@ -255,14 +275,11 @@ function PremiumVoteProgressBar({ doomPercent, avengersPercent, totalVotes }) {
           animate={{ left: `${doomPercent}%` }}
           transition={SPRING_LIGHT}
         >
-          {/* Vertical Split Line */}
           <div
             className={`w-[2px] h-full bg-white/90 shadow-[0_0_8px_rgba(255,255,255,0.9)] transition-all duration-300 ${
               pulse ? 'scale-x-150 bg-white' : ''
             }`}
           />
-
-          {/* Rounded Cap Marker Dot */}
           <div
             className={`w-2.5 h-2.5 rounded-full bg-white absolute -top-1 -left-[4px] shadow-[0_0_10px_rgba(255,255,255,1)] transition-transform duration-300 ${
               pulse ? 'scale-150' : 'scale-100'
@@ -336,7 +353,7 @@ export function DoomsdayVotingSection() {
         <span className="text-[10px] font-space font-bold uppercase tracking-[0.25em] text-[#00D6FF]/70 mb-2 flex items-center gap-1.5">
           <Users className="w-3 h-3" /> DOOM VOTERS
         </span>
-        <AnimatePresence>
+        <AnimatePresence mode="popLayout">
           {doomNames.slice(0, 12).map((item) => (
             <VoterPill key={item.id} name={item.name} side="doom" />
           ))}
@@ -348,7 +365,7 @@ export function DoomsdayVotingSection() {
         <span className="text-[10px] font-space font-bold uppercase tracking-[0.25em] text-[#FF5070]/70 mb-2 flex items-center gap-1.5">
           <Users className="w-3 h-3" /> AVENGERS VOTERS
         </span>
-        <AnimatePresence>
+        <AnimatePresence mode="popLayout">
           {avengersNames.slice(0, 12).map((item) => (
             <VoterPill key={item.id} name={item.name} side="avengers" />
           ))}
