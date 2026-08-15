@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useInView } from 'framer-motion';
 import { useDoomsdayVoting } from '../hooks/useDoomsdayVoting';
 import { CountUpNumber } from './CountUpNumber';
 import { VoterNameModal } from './VoterNameModal';
-import { Check, Users, Lock } from 'lucide-react';
+import { Check, Users } from 'lucide-react';
 import {
   SPRING_MEDIUM,
   SPRING_LIGHT,
@@ -56,20 +56,14 @@ function VoteCard({
   icon,
   accentColor,
   glowColor,
-  isSelected,
-  hasVoted,
   isSubmitting,
   onCardClick,
 }) {
-  const isDisabled = hasVoted || isSubmitting;
-
   return (
     <div className="relative group w-full">
       {/* Ambient radial glow behind the card */}
       <div
-        className={`absolute inset-0 rounded-3xl pointer-events-none transition-opacity duration-700 ${
-          isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-60'
-        }`}
+        className="absolute inset-0 rounded-3xl pointer-events-none transition-opacity duration-700 opacity-0 group-hover:opacity-60"
         style={{
           background: `radial-gradient(circle at center, ${glowColor}66 0%, transparent 70%)`,
           transform: 'scale(1.15)',
@@ -79,27 +73,21 @@ function VoteCard({
       />
 
       <motion.button
-        data-cursor={isDisabled ? undefined : 'hover'}
+        data-cursor="hover"
         onClick={() => onCardClick(option)}
-        disabled={isDisabled}
-        whileHover={!isDisabled ? { scale: 1.015 } : {}}
-        whileTap={!isDisabled ? { scale: 0.975 } : {}}
+        disabled={isSubmitting}
+        whileHover={{ scale: 1.015 }}
+        whileTap={{ scale: 0.975 }}
         transition={SPRING_SNAPPY}
-        className={`relative z-10 w-full h-[380px] md:h-[440px] rounded-3xl overflow-hidden border text-center flex flex-col items-center justify-end p-8 md:p-10 focus:outline-none transition-all duration-500 shadow-2xl ${
-          isDisabled ? 'cursor-default opacity-85' : 'cursor-pointer'
-        }`}
+        className="relative z-10 w-full h-[380px] md:h-[440px] rounded-3xl overflow-hidden border text-center flex flex-col items-center justify-end p-8 md:p-10 focus:outline-none transition-all duration-500 shadow-2xl cursor-pointer"
         style={{
-          borderColor: isSelected ? accentColor : 'rgba(255,255,255,0.12)',
-          boxShadow: isSelected
-            ? `0 0 0 2px ${accentColor}, 0 20px 60px ${glowColor}44`
-            : '0 10px 40px rgba(0,0,0,0.8)',
+          borderColor: 'rgba(255,255,255,0.12)',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.8)',
         }}
       >
-        {/* Image background with hover zoom disabled if already voted */}
+        {/* Parallax-lite Image background with hover zoom */}
         <div
-          className={`absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out ${
-            isDisabled ? '' : 'group-hover:scale-105'
-          }`}
+          className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-105"
           style={{
             backgroundImage: `url(${bgImage})`,
             backgroundColor: '#0a0d14',
@@ -147,34 +135,9 @@ function VoteCard({
             {sublabel}
           </span>
 
-          <AnimatePresence>
-            {isSelected ? (
-              <motion.span
-                key="chosen"
-                initial={{ opacity: 0, scale: 0.6, y: 6 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={SPRING_SNAPPY}
-                className="inline-flex items-center gap-1.5 text-xs font-space font-bold px-4 py-1.5 rounded-full border backdrop-blur-md"
-                style={{
-                  color: accentColor,
-                  borderColor: `${accentColor}60`,
-                  backgroundColor: 'rgba(0,0,0,0.75)',
-                }}
-              >
-                <Check className="w-3.5 h-3.5" />
-                YOUR CHOICE
-              </motion.span>
-            ) : hasVoted ? (
-              <span className="text-xs font-space tracking-widest text-white/40 uppercase border border-white/10 px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md inline-flex items-center gap-1.5">
-                <Lock className="w-3 h-3" />
-                VOTED
-              </span>
-            ) : (
-              <span className="text-xs font-space tracking-widest text-white/70 uppercase border border-white/20 px-4 py-1.5 rounded-full bg-black/40 backdrop-blur-md group-hover:bg-white group-hover:text-black group-hover:border-white transition-all">
-                CLICK TO VOTE
-              </span>
-            )}
-          </AnimatePresence>
+          <span className="text-xs font-space tracking-widest text-white/70 uppercase border border-white/20 px-4 py-1.5 rounded-full bg-black/40 backdrop-blur-md group-hover:bg-white group-hover:text-black group-hover:border-white transition-all">
+            CLICK TO VOTE
+          </span>
         </div>
       </motion.button>
     </div>
@@ -310,8 +273,6 @@ export function DoomsdayVotingSection() {
     avengersPercent,
     doomNames,
     avengersNames,
-    hasVoted,
-    userVote,
     isSubmitting,
     submitVoteWithName,
   } = useDoomsdayVoting();
@@ -323,10 +284,7 @@ export function DoomsdayVotingSection() {
   const isInView   = useInView(sectionRef, { once: true, margin: '-5%' });
 
   const handleCardClick = (side) => {
-    if (hasVoted || isSubmitting) {
-      alert("You have already voted! Multiple votes per person are not allowed.");
-      return;
-    }
+    if (isSubmitting) return;
     setSelectedSide(side);
     setModalOpen(true);
   };
@@ -334,11 +292,6 @@ export function DoomsdayVotingSection() {
   const handleModalSubmit = async (voterName) => {
     if (!selectedSide) return { success: false };
     const res = await submitVoteWithName(selectedSide, voterName);
-    if (res && res.alreadyVoted) {
-      alert("You have already voted within the 24-hour window.");
-      setModalOpen(false);
-      return res;
-    }
     if (res && res.success) {
       setModalOpen(false);
       return res;
@@ -412,8 +365,6 @@ export function DoomsdayVotingSection() {
             icon={<DoomIcon size={34} />}
             accentColor="#00D6FF"
             glowColor="#00D6FF"
-            isSelected={userVote === 'doom'}
-            hasVoted={hasVoted}
             isSubmitting={isSubmitting}
             onCardClick={handleCardClick}
           />
@@ -425,8 +376,6 @@ export function DoomsdayVotingSection() {
             icon={<AvengersIcon size={34} />}
             accentColor="#FF5070"
             glowColor="#FF2A5F"
-            isSelected={userVote === 'avengers'}
-            hasVoted={hasVoted}
             isSubmitting={isSubmitting}
             onCardClick={handleCardClick}
           />

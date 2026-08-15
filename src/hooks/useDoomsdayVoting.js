@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
-const LOCAL_STORAGE_KEY = 'avengers_doomsday_user_vote';
-
 // Fallback initial counts & names if Supabase is offline
 const INITIAL_FALLBACK_COUNTS = {
   doom: 4820,
@@ -30,44 +28,10 @@ export function useDoomsdayVoting() {
   const [counts, setCounts] = useState(INITIAL_FALLBACK_COUNTS);
   const [doomNames, setDoomNames] = useState(INITIAL_FALLBACK_NAMES.doom);
   const [avengersNames, setAvengersNames] = useState(INITIAL_FALLBACK_NAMES.avengers);
-  const [hasVoted, setHasVoted] = useState(false);
-  const [userVote, setUserVote] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [isLive, setIsLive] = useState(false);
-
-  // Check server-side status (cookie + IP hash) and localStorage on mount
-  useEffect(() => {
-    // 1. LocalStorage check for instant UI state
-    try {
-      const savedVote = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (savedVote) {
-        setHasVoted(true);
-        setUserVote(savedVote);
-      }
-    } catch (e) {
-      console.warn('LocalStorage unavailable:', e);
-    }
-
-    // 2. Server-side /api/vote/status GET check (cookie + IP hash)
-    const checkServerStatus = async () => {
-      try {
-        const res = await fetch('/api/vote/status');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.hasVoted) {
-            setHasVoted(true);
-            if (data.option) setUserVote(data.option);
-          }
-        }
-      } catch (err) {
-        console.warn('Could not check /api/vote/status:', err);
-      }
-    };
-
-    checkServerStatus();
-  }, []);
 
   // Fetch current aggregate counts and recent voter names from Supabase
   const fetchData = useCallback(async () => {
@@ -107,7 +71,7 @@ export function useDoomsdayVoting() {
       console.log('[Supabase Fetch] Fetched vote_names rows:', nameData, 'Error:', nameError);
 
       if (nameError) {
-        console.warn('[Supabase Fetch] Error fetching vote names (check RLS SELECT policy):', nameError);
+        console.warn('[Supabase Fetch] Error fetching vote names:', nameError);
       } else if (nameData && nameData.length > 0) {
         const doomStack = [];
         const avengersStack = [];
@@ -177,9 +141,9 @@ export function useDoomsdayVoting() {
     };
   }, []);
 
-  // Submit vote via POST /api/vote (Server-side API route enforcing deduplication)
+  // Submit vote via POST /api/vote (Unrestricted voting: every submission inserts a new row)
   const submitVoteWithName = async (option, voterName) => {
-    if (hasVoted || isSubmitting) return { success: false };
+    if (isSubmitting) return { success: false };
     if (option !== 'doom' && option !== 'avengers') return { success: false };
 
     const trimmedName = voterName.trim();
@@ -200,14 +164,6 @@ export function useDoomsdayVoting() {
       const data = await res.json();
 
       if (res.status === 200) {
-        // Success: update localStorage and state
-        try {
-          localStorage.setItem(LOCAL_STORAGE_KEY, option);
-        } catch (e) {}
-
-        setHasVoted(true);
-        setUserVote(option);
-
         if (data.doomCount !== undefined && data.avengersCount !== undefined) {
           setCounts({ doom: data.doomCount, avengers: data.avengersCount });
         }
@@ -222,18 +178,7 @@ export function useDoomsdayVoting() {
 
         setIsSubmitting(false);
         return { success: true };
-      } else if (res.status === 409) {
-        // Already Voted
-        try {
-          localStorage.setItem(LOCAL_STORAGE_KEY, data.option || option);
-        } catch (e) {}
-
-        setHasVoted(true);
-        setUserVote(data.option || option);
-        setIsSubmitting(false);
-        return { alreadyVoted: true, message: 'You have already voted within the 24-hour window.' };
       } else {
-        // Bad Request / Validation error
         setError(data.message || 'Vote submission failed.');
         setIsSubmitting(false);
         return { success: false, error: data.message || 'Vote submission failed.' };
@@ -257,8 +202,8 @@ export function useDoomsdayVoting() {
     avengersPercent,
     doomNames,
     avengersNames,
-    hasVoted,
-    userVote,
+    hasVoted: false,
+    userVote: null,
     isLoading,
     isSubmitting,
     isLive,

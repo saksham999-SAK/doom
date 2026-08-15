@@ -1,92 +1,16 @@
-import crypto from 'crypto';
 import { getSupabaseServerClient } from './supabaseServer.js';
-
-// Configurable vote deduplication window (in hours). Set to null for permanent 1 vote per IP.
-export const VOTE_COOLDOWN_HOURS = 24;
-
-/**
- * Extracts requester IP address from headers or socket.
- */
-export function getRequesterIp(req) {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
-  return req.headers['x-real-ip'] || req.socket?.remoteAddress || '127.0.0.1';
-}
-
-/**
- * Computes SHA-256 hash of the requester IP. Never store raw IPs!
- */
-export function hashIp(ip) {
-  return crypto.createHash('sha256').update(ip).digest('hex');
-}
-
-/**
- * Parses cookies from HTTP Cookie header string.
- */
-export function parseCookies(cookieHeader) {
-  const cookies = {};
-  if (!cookieHeader) return cookies;
-  cookieHeader.split(';').forEach((cookie) => {
-    const parts = cookie.split('=');
-    const name = parts[0].trim();
-    const value = parts.slice(1).join('=').trim();
-    if (name) cookies[name] = value;
-  });
-  return cookies;
-}
 
 /**
  * Handles GET /api/vote/status request.
+ * Unrestricted voting — always returns hasVoted: false so users can vote repeatedly.
  */
 export async function handleVoteStatus(req, res) {
-  try {
-    const cookies = parseCookies(req.headers['cookie']);
-    const cookieVote = cookies['has_voted'];
-
-    if (cookieVote && (cookieVote === 'doom' || cookieVote === 'avengers')) {
-      return res.status(200).json({ hasVoted: true, option: cookieVote });
-    }
-
-    const supabaseServer = getSupabaseServerClient();
-    if (!supabaseServer) {
-      return res.status(200).json({ hasVoted: false, option: null });
-    }
-
-    const ip = getRequesterIp(req);
-    const ipHash = hashIp(ip);
-
-    let query = supabaseServer
-      .from('vote_names')
-      .select('option, created_at')
-      .eq('ip_hash', ipHash)
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    if (VOTE_COOLDOWN_HOURS !== null && VOTE_COOLDOWN_HOURS > 0) {
-      const cooldownDate = new Date(
-        Date.now() - VOTE_COOLDOWN_HOURS * 60 * 60 * 1000
-      ).toISOString();
-      query = query.gte('created_at', cooldownDate);
-    }
-
-    const { data, error } = await query;
-
-    if (!error && data && data.length > 0) {
-      const userVote = data[0].option;
-      return res.status(200).json({ hasVoted: true, option: userVote });
-    }
-
-    return res.status(200).json({ hasVoted: false, option: null });
-  } catch (err) {
-    console.error('Error in vote status check:', err);
-    return res.status(200).json({ hasVoted: false, option: null });
-  }
+  return res.status(200).json({ hasVoted: false, option: null });
 }
 
 /**
  * Handles POST /api/vote request.
+ * Basic unrestricted vote insertion — inserts name + option into vote_names without deduplication.
  */
 export async function handleVoteSubmit(req, res, body) {
   try {
@@ -108,10 +32,6 @@ export async function handleVoteSubmit(req, res, body) {
       });
     }
 
-    // 2. IP Extraction & Hashing
-    const ip = getRequesterIp(req);
-    const ipHash = hashIp(ip);
-
     const supabaseServer = getSupabaseServerClient();
     if (!supabaseServer) {
       console.error('[API /api/vote] Server error: SUPABASE_SERVICE_ROLE_KEY or SUPABASE_URL not found in env.');
@@ -121,53 +41,13 @@ export async function handleVoteSubmit(req, res, body) {
       });
     }
 
-    // 3. Deduplication Check by ip_hash within cooldown window
-    let dupQuery = supabaseServer
-      .from('vote_names')
-      .select('id, option, created_at')
-      .eq('ip_hash', ipHash)
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    if (VOTE_COOLDOWN_HOURS !== null && VOTE_COOLDOWN_HOURS > 0) {
-      const cooldownDate = new Date(
-        Date.now() - VOTE_COOLDOWN_HOURS * 60 * 60 * 1000
-      ).toISOString();
-      dupQuery = dupQuery.gte('created_at', cooldownDate);
-    }
-
-    const { data: existingVotes, error: dupError } = await dupQuery;
-
-    if (dupError) {
-      console.warn('[API /api/vote] Notice: Error checking ip_hash (table/column may need v3 SQL migration):', dupError.message);
-    } else if (existingVotes && existingVotes.length > 0) {
-      console.log('[API /api/vote] Blocked duplicate vote from ip_hash:', ipHash.substring(0, 8));
-      return res.status(409).json({
-        error: 'already_voted',
-        message: 'You have already voted within the 24-hour window.',
-        option: existingVotes[0].option,
-      });
-    }
-
-    // 4. Insert into vote_names table (Service Role client bypasses RLS)
-    let insertResult = await supabaseServer
+    // 2. Direct insert into vote_names table (option + name + timestamp)
+    const insertResult = await supabaseServer
       .from('vote_names')
       .insert({
         name: trimmedName,
         option,
-        ip_hash: ipHash,
       });
-
-    // If insertion failed because ip_hash column doesn't exist yet on production DB, fallback to basic insert
-    if (insertResult.error && insertResult.error.code === '42703') {
-      console.warn('[API /api/vote] Column ip_hash missing on vote_names, attempting fallback insert without ip_hash...');
-      insertResult = await supabaseServer
-        .from('vote_names')
-        .insert({
-          name: trimmedName,
-          option,
-        });
-    }
 
     if (insertResult.error) {
       console.error('[API /api/vote] FAILED to insert into vote_names table:', {
@@ -184,7 +64,7 @@ export async function handleVoteSubmit(req, res, body) {
 
     console.log(`[API /api/vote] SUCCESS: Recorded vote "${trimmedName}" for ${option}`);
 
-    // 5. Increment aggregate counter in vote_counters table
+    // 3. Increment aggregate counter in vote_counters table
     const { data: countData, error: counterSelectError } = await supabaseServer
       .from('vote_counters')
       .select('option, count');
@@ -212,11 +92,6 @@ export async function handleVoteSubmit(req, res, body) {
     const total = currentDoom + currentAvengers;
     const doomPercent = total > 0 ? Math.round((currentDoom / total) * 100) : 50;
     const avengersPercent = total > 0 ? 100 - doomPercent : 50;
-
-    // 6. Set HttpOnly Cookie
-    const maxAgeSeconds = VOTE_COOLDOWN_HOURS ? VOTE_COOLDOWN_HOURS * 3600 : 31536000;
-    const cookieValue = `has_voted=${option}; Path=/; Max-Age=${maxAgeSeconds}; HttpOnly; SameSite=Lax; Secure`;
-    res.setHeader('Set-Cookie', cookieValue);
 
     return res.status(200).json({
       success: true,
