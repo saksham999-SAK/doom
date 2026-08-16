@@ -19,7 +19,7 @@ export function useScrollCanvasSequence({
   canvasRef,
   images,
   isLoaded,
-  lerpFactor = 0.15,
+  lerpFactor = 0.08,
   lenisRef,
 }) {
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -151,7 +151,7 @@ export function useScrollCanvasSequence({
           current = target;
         } else {
           const step       = diff * lerpFactor;
-          const cappedStep = Math.sign(step) * Math.min(Math.abs(step), 25);
+          const cappedStep = Math.sign(step) * Math.min(Math.abs(step), 1.2);
           current += cappedStep;
         }
       }

@@ -14,7 +14,7 @@ export function HeroSequenceSection({ images, isLoaded, lenisRef }) {
     canvasRef,
     images,
     isLoaded,
-    lerpFactor: 0.15,
+    lerpFactor: 0.08,
     lenisRef,
   });
 
@@ -38,7 +38,7 @@ export function HeroSequenceSection({ images, isLoaded, lenisRef }) {
   return (
     <section
       ref={wrapperRef}
-      className="relative w-full h-[520vh] bg-[#000000]"
+      className="relative w-full h-[850vh] bg-[#000000]"
       id="sequence"
     >
       <div className="sticky top-0 left-0 w-full h-screen flex items-center justify-center bg-[#000000] overflow-hidden">
