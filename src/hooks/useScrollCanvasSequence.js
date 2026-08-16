@@ -19,7 +19,7 @@ export function useScrollCanvasSequence({
   canvasRef,
   images,
   isLoaded,
-  lerpFactor = 0.30,
+  lerpFactor = 0.15,
   lenisRef,
 }) {
   const [scrollProgress, setScrollProgress] = useState(0);
