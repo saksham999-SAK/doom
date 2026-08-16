@@ -42,27 +42,29 @@ export async function handleVoteSubmit(req, res, body) {
     }
 
     // 2. Direct insert into vote_names table (option + name + timestamp)
-    const insertResult = await supabaseServer
+    const { data: insertedData, error: insertError } = await supabaseServer
       .from('vote_names')
       .insert({
         name: trimmedName,
         option,
-      });
+      })
+      .select();
 
-    if (insertResult.error) {
+    if (insertError) {
       console.error('[API /api/vote] FAILED to insert into vote_names table:', {
-        code: insertResult.error.code,
-        message: insertResult.error.message,
-        details: insertResult.error.details,
-        hint: insertResult.error.hint,
+        code: insertError.code,
+        message: insertError.message,
+        details: insertError.details,
+        hint: insertError.hint,
       });
       return res.status(500).json({
         error: 'db_insert_failed',
-        message: `Failed to record vote name: ${insertResult.error.message}`,
+        message: `Failed to record vote name: ${insertError.message}`,
       });
     }
 
-    console.log(`[API /api/vote] SUCCESS: Recorded vote "${trimmedName}" for ${option}`);
+    const insertedRow = insertedData && insertedData.length > 0 ? insertedData[0] : null;
+    console.log(`[API /api/vote] SUCCESS: Recorded vote "${trimmedName}" for ${option}`, insertedRow);
 
     // 3. Increment aggregate counter in vote_counters table
     const { data: countData, error: counterSelectError } = await supabaseServer
@@ -96,6 +98,7 @@ export async function handleVoteSubmit(req, res, body) {
     return res.status(200).json({
       success: true,
       option,
+      insertedRow,
       doomCount: currentDoom,
       avengersCount: currentAvengers,
       totalVotes: total,

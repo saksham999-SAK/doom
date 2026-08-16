@@ -24,6 +24,38 @@ const INITIAL_FALLBACK_NAMES = {
   ],
 };
 
+/**
+ * Helper to update voter name stack without introducing duplicate pills.
+ * If the entry's ID is already in the stack, ignore.
+ * If a temporary local entry exists for the same name & option, replace it in place.
+ * Otherwise prepend the new entry and retain the top 15 entries.
+ */
+function updateNameStack(prevStack, newVote) {
+  if (!newVote || !newVote.name) return prevStack;
+
+  // 1. Exact ID already present -> skip
+  if (prevStack.some((item) => String(item.id) === String(newVote.id))) {
+    return prevStack;
+  }
+
+  // 2. Temp entry ('local-...') with same name & option -> replace in place with real DB entry
+  const tempIndex = prevStack.findIndex(
+    (item) =>
+      String(item.id).startsWith('local-') &&
+      item.name.trim().toLowerCase() === newVote.name.trim().toLowerCase() &&
+      item.option === newVote.option
+  );
+
+  if (tempIndex !== -1) {
+    const updated = [...prevStack];
+    updated[tempIndex] = newVote;
+    return updated;
+  }
+
+  // 3. Otherwise prepend newVote and keep top 15
+  return [newVote, ...prevStack.slice(0, 14)];
+}
+
 export function useDoomsdayVoting() {
   const [counts, setCounts] = useState(INITIAL_FALLBACK_COUNTS);
   const [doomNames, setDoomNames] = useState(INITIAL_FALLBACK_NAMES.doom);
@@ -125,9 +157,9 @@ export function useDoomsdayVoting() {
           console.log('[Supabase Realtime] Received new vote_names row:', payload.new);
           const newVote = payload.new;
           if (newVote.option === 'doom') {
-            setDoomNames((prev) => [newVote, ...prev.slice(0, 14)]);
+            setDoomNames((prev) => updateNameStack(prev, newVote));
           } else if (newVote.option === 'avengers') {
-            setAvengersNames((prev) => [newVote, ...prev.slice(0, 14)]);
+            setAvengersNames((prev) => updateNameStack(prev, newVote));
           }
         }
       )
@@ -168,12 +200,17 @@ export function useDoomsdayVoting() {
           setCounts({ doom: data.doomCount, avengers: data.avengersCount });
         }
 
-        // Add to local stack immediately for snappy feedback
-        const newEntry = { id: `local-${Date.now()}`, name: trimmedName, option };
+        // Use inserted DB row if returned, else fallback to temp local entry
+        const newEntry = data.insertedRow || {
+          id: `local-${Date.now()}`,
+          name: trimmedName,
+          option,
+        };
+
         if (option === 'doom') {
-          setDoomNames((prev) => [newEntry, ...prev.slice(0, 14)]);
+          setDoomNames((prev) => updateNameStack(prev, newEntry));
         } else {
-          setAvengersNames((prev) => [newEntry, ...prev.slice(0, 14)]);
+          setAvengersNames((prev) => updateNameStack(prev, newEntry));
         }
 
         setIsSubmitting(false);
