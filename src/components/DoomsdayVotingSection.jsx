@@ -305,9 +305,9 @@ function VoterPill({ name, side }) {
       initial={{ opacity: 0, x: isDoom ? -40 : 40, scale: 0.85 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.8 }}
-      whileHover={{ scale: 1.05, x: isDoom ? 4 : -4 }}
+      whileHover={{ scale: 1.02, x: isDoom ? 4 : -4 }}
       transition={SPRING_LIGHT}
-      className="relative group inline-flex items-center gap-2.5 px-4 py-2 rounded-xl border text-xs font-space font-semibold backdrop-blur-xl shadow-xl shrink-0 whitespace-nowrap"
+      className="relative group w-full flex items-center gap-2.5 px-4 py-2 rounded-xl border text-xs font-space font-semibold backdrop-blur-xl shadow-xl"
       style={{
         backgroundColor: 'rgba(10, 15, 24, 0.88)',
         borderColor: border,
@@ -399,7 +399,7 @@ export function DoomsdayVotingSection() {
         <HolographicDoomHeader />
         
         {/* Scrollable / Animated Voter Stack container */}
-        <div className="w-full flex flex-col gap-3 overflow-hidden pr-2">
+        <div className="w-full flex flex-col gap-3 overflow-hidden">
           <AnimatePresence mode="popLayout">
             {doomNames.slice(0, 10).map((item) => (
               <VoterPill key={item.id} name={item.name} side="doom" />
@@ -413,7 +413,7 @@ export function DoomsdayVotingSection() {
         <HolographicAvengersHeader />
 
         {/* Scrollable / Animated Voter Stack container */}
-        <div className="w-full flex flex-col gap-3 overflow-hidden items-end pl-2">
+        <div className="w-full flex flex-col gap-3 overflow-hidden">
           <AnimatePresence mode="popLayout">
             {avengersNames.slice(0, 10).map((item) => (
               <VoterPill key={item.id} name={item.name} side="avengers" />

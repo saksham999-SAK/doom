@@ -200,18 +200,11 @@ export function useDoomsdayVoting() {
           setCounts({ doom: data.doomCount, avengers: data.avengersCount });
         }
 
-        // Use inserted DB row if returned, else fallback to temp local entry
-        const newEntry = data.insertedRow || {
-          id: `local-${Date.now()}`,
-          name: trimmedName,
-          option,
-        };
-
-        if (option === 'doom') {
-          setDoomNames((prev) => updateNameStack(prev, newEntry));
-        } else {
-          setAvengersNames((prev) => updateNameStack(prev, newEntry));
-        }
+        // ✅ Do NOT push the name locally here.
+        // The Supabase Realtime INSERT listener (above) is the single source of
+        // truth for the voter name stack — it already deduplicates via
+        // updateNameStack(). Pushing here AND there caused the name to appear
+        // twice every time a vote was submitted.
 
         setIsSubmitting(false);
         return { success: true };
